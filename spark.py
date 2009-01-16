@@ -134,9 +134,6 @@ plot_types = {'discrete': plot_sparkline_discrete,
                  'error': plot_error
     }
 
-import logging
-logging.info(os.environ)
-
 if not os.environ['REQUEST_METHOD'] in ['GET', 'HEAD']:
     error("Status: 405 Method Not Allowed")
 if_none_match = os.environ.get('HTTP_IF_NONE_MATCH', '')
