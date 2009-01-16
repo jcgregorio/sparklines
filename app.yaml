@@ -13,6 +13,6 @@ handlers:
   upload: spark.js 
 
 - url: /spark.cgi?.*
-  script: spark.py
+  script: main.py
 
 

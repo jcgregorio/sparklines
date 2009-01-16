@@ -7,12 +7,13 @@ A web service for generating sparklines.
 __author__ = "Joe Gregorio (joe@bitworking.org)"
 __copyright__ = "Copyright 2005, Joe Gregorio"
 __contributors__ = ['Alan Powell']
-__version__ = "1.0.0 $Rev: 323 $"
+__version__ = "1.0.1 $Rev: 323 $"
 __license__ = "MIT"
 __history__ = """
 
 """
 
+# TODO Make color selection robust
 import cgi
 import cgitb
 import sys
@@ -24,9 +25,16 @@ cgitb.enable()
 from pngcanvas import PNGCanvas 
 import rgb
 import StringIO
-
+import hashlib
+try:
+    from google.appengine.api import memcache
+except:
+    memcache = None
 
 last_modified = os.stat('spark.cgi').st_mtime
+
+def hashed(str):
+    return hashlib.md5(str).hexdigest()
 
 def plot_sparkline_discrete(results, args, longlines=False):
     """The source data is a list of values between
@@ -36,7 +44,7 @@ def plot_sparkline_discrete(results, args, longlines=False):
     width = int(args.get('width', '2'))
     height = int(args.get('height', '14'))
     upper = int(args.get('upper', '50'))
-    below_color = args.get('below-color', 'gray')
+    below_color = args.get('below-color', 'dark gray')
     above_color = args.get('above-color', 'red')
     gap = 4
     if longlines:
@@ -72,7 +80,7 @@ def plot_sparkline_smooth(results, args):
    im.color = rgb.colors['white']
    im.filledRectangle(0, 0, im.width-1, im.height-1)
    coords = zip(range(1,len(results)*step+1, step), [height - 3  - (y-dmin)/(float(dmax - dmin +1)/(height-4)) for y in results])
-   im.color = rgb.colors['gray']
+   im.color = rgb.colors['dark gray']
    lastx, lasty = coords[0]
    for x0, y0, in coords:
      im.line(lastx, lasty, x0, y0)
@@ -114,7 +122,8 @@ def ok():
     print "Status: 200 Ok"
     print "Content-type: image/png"
     print "Last-Modified: " + time.ctime(last_modified) + " GMT"
-    print 'ETag: "%s"' % str(hash(os.environ['QUERY_STRING'] + __version__))
+    print 'ETag: "%s"' % str(hashed(os.environ['QUERY_STRING'] + __version__))
+    print 'Cache-control: max-age 999999999'
     print ""
 
 def error(status="Status: 400 Bad Request"):
@@ -134,30 +143,41 @@ plot_types = {'discrete': plot_sparkline_discrete,
                  'error': plot_error
     }
 
-if not os.environ['REQUEST_METHOD'] in ['GET', 'HEAD']:
-    error("Status: 405 Method Not Allowed")
-if_none_match = os.environ.get('HTTP_IF_NONE_MATCH', '')
-if if_none_match and str(hash(os.environ.get('QUERY_STRING', '') + __version__)) == if_none_match:
-    not_modified()
-form = cgi.FieldStorage()
-raw_data = cgi_param(form, 'd', '')
-if not raw_data:
-    error("Status: 400 No data supplied")
-#try:
-(data_min, data_max) = [int(x) for x in cgi_param(form, 'limits', '0,100').split(',')]
+def plot():
+    if not os.environ['REQUEST_METHOD'] in ['GET', 'HEAD']:
+        error("Status: 405 Method Not Allowed")
+    if_none_match = os.environ.get('HTTP_IF_NONE_MATCH', '')
+    hashkey = str(hashed(os.environ.get('QUERY_STRING', '') + __version__)) 
+    if if_none_match and hashkey == if_none_match:
+        not_modified()
+    if memcache:
+        image_data = memcache.get(hashkey)
+        if image_data is not None:
+            ok()
+            sys.stdout.write(image_data)
+            sys.exit()
 
-data = [int(d) for d in raw_data.split(",") if d]
-if min(data) < data_min or max(data) > data_max:
-    error("Status: 400 Data out of range")
+    form = cgi.FieldStorage()
+    raw_data = cgi_param(form, 'd', '')
+    if not raw_data:
+        error("Status: 400 No data supplied")
+    try:
+        (data_min, data_max) = [int(x) for x in cgi_param(form, 'limits', '0,100').split(',')]
 
-args = dict([(key, form[key].value) for key in form.keys()])
-type = cgi_param(form, 'type', 'discrete')
-if not plot_types.has_key(type):
-    error("Status: 400 Unknown plot type.")
+        data = [int(d) for d in raw_data.split(",") if d]
+        if min(data) < data_min or max(data) > data_max:
+            error("Status: 400 Data out of range")
 
-image_data = plot_types[type](data, args)
-ok()
-sys.stdout.write(image_data)
-#except:
-#    error("Status: 500 Exception")
+        args = dict([(key, form[key].value) for key in form.keys()])
+        type = cgi_param(form, 'type', 'discrete')
+        if not plot_types.has_key(type):
+            error("Status: 400 Unknown plot type.")
+
+        image_data = plot_types[type](data, args)
+        if memcache:
+            memcache.add(hashkey, image_data)
+        ok()
+        sys.stdout.write(image_data)
+    except:
+        error("Status: 500 Exception")
 
