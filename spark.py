@@ -133,7 +133,7 @@ plot_types = {'discrete': plot_sparkline_discrete,
                 'smooth': plot_sparkline_smooth,
                  'error': plot_error
     }
-
+ 
 if not os.environ['REQUEST_METHOD'] in ['GET', 'HEAD']:
     error("Status: 405 Method Not Allowed")
 if_none_match = os.environ.get('HTTP_IF_NONE_MATCH', '')
