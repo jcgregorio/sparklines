@@ -1,0 +1,134 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title> Porting sparklines to App Engine </title>
+    </head>
+    <body>
+        <p>
+        The title of this article is actually misleading
+        as the code isn't ported, but altered to run on both
+        App Engine and under CGI. Now App Engine exposes a CGI 
+        environment that your requests run under, so the real
+        challenge comes from the differences in the runtime
+        environment.
+        </p>
+        <h3>Imaging</h3>
+        <p>
+        The first big difference is that PIL (the Python Imaging
+        Library) isn't available on App Engine, and it's not possible
+        to add C modules (what's the right name for these?)
+        to your App Engine project, so we will have to find
+        a pure Python substitute. Such a substitute exists in
+        pngcanvas, a pure Python module for creating PNG images.
+        This is actually the completion of a virtuous circle since
+        I originally created the Python sparklines service, and
+        _why wanted to create on in Ruby and in the process
+        created a pure Ruby library for creating PNGs which 
+        Rui Carmo then ported to Python, which I will now use in
+        porting the original sparklines code to App Engine.
+        Small world.
+        </p>
+        <p>
+        Now you probably won't want to use pngcanvas for 
+        extensive graphics manipulation, but since sparklines
+        are small it will be just fine.
+        As a side note, I really like the simplicity of the
+        pngcanvas interface, the port actually resulted in removing
+        lines of code, which is always a good sign.
+        </p>
+        <p>
+        The one problem left in the port from PIL to pngcanvas
+        is the lack of color names. PIL allows you to specify
+        colors by name, something pngcanvas doesn't support.
+        Luckily X11 includes a convenient list of color names
+        and their equivalent in RGB triples (/etc/X11/rgb.txt)
+        which just needs to be converted into a form usable for
+        Python. I could write code to import rgb.txt via Python, but
+        since I have to upload the file to App Engine anyway, I mine
+        as well exercise the macro capabilities of my text editor and
+        covert it into a Python file:
+        </p>
+        <p>
+        Now I can use rgb.py to covert color names into RGB triples, 
+        or in this case RGBA tuples like pngcanvas expects. 
+        </p>
+        <h3>app.yaml</h3>
+        <p>
+        If we wanted to do the absolute minimum then
+        that would be all the changes we would need to make.
+        The only extra step needed for App Engine is to describe
+        the files we are using and their locations so it knows
+        what to upload and how to direct requests:
+        </p>
+        <pre class='prettyprint'>application: sparklines-bitworking
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /
+  static_files: index.html
+  upload: index.html
+
+- url: /spark.js
+  static_files: spark.js 
+  upload: spark.js 
+
+- url: /spark.cgi?.*
+  script: spark.py
+</pre>
+
+        <h3>The <code>main()</code> optimization</h3>
+        <p>
+        If your handler script exports a <code>main()</code> function
+        that takes no arguments then App Engine will keep the script
+        cached and call main for subsequent requests, and 
+        skipping the evaluation of the request on each
+        request improves performance.
+        </p>
+
+        <p>
+        So we'll break out the code into two modules,
+        <code>main.py</code> which will be our script handler
+        and <code>script.py</code> which will contain
+        all of the sparkline drawing logic.
+        That change is now reflected in our <code>app.yaml</code>
+        file:
+        </p>
+
+<pre class='prettyprint'>application: sparklines-bitworking
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /
+  static_files: index.html
+  upload: index.html
+
+- url: /spark.js
+  static_files: spark.js 
+  upload: spark.js 
+
+- url: /spark.cgi?.*
+  script: main.py
+        </pre>
+
+        <p>
+        Now the original sparklines code was already made good use
+        HTTP caching by setting ETag: and Cache-control: headers, but
+        we can do more under App Engine by using memcache.
+        After drawing each sparkline we can store the PNG in 
+        memcache using a hash of the incoming request query 
+        parameters and the application version as the key 
+        and subsequently look for images in memcache when 
+        requests come in using that same hash and thus avoid 
+        doing any drawing at all.
+        We still want to be able to use the code on a
+        system that doesn't have memcache support so
+        we will make its use conditional.
+        </p>
+
+
+    </body>
+</html>
