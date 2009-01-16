@@ -50,7 +50,7 @@ def plot_sparkline_discrete(results, args, longlines=False):
     if longlines:
         gap = 0
     im = PNGCanvas(len(results)*width-1, height)
-    im.color = rgb.colors['white']
+    im.color = rgb.colors('white')
     im.filledRectangle(0, 0, im.width-1, im.height-1)
 
     (dmin, dmax) = [int(x) for x in args.get('limits', '0,100').split(',')]
@@ -65,11 +65,11 @@ def plot_sparkline_discrete(results, args, longlines=False):
             y_coord = im.height - (r - dmin) / (float(dmax - dmin + 1) / (height - gap))
         else:
             y_coord = im.height - (r - dmin) / (float(dmax - dmin + 1) / (height - gap))
-        im.color = rgb.colors[color]
+        im.color = rgb.colors(color)
         if longlines:
-            im.rectangle(i, zero, i+width-2, y_coord)
+            im.filledRectangle(i, zero, i+width-2, y_coord)
         else:
-            im.rectangle(i, y_coord - gap, i+width-2, y_coord)
+            im.filledRectangle(i, y_coord - gap, i+width-2, y_coord)
     return im.dump()
 
 def plot_sparkline_smooth(results, args):
@@ -77,37 +77,37 @@ def plot_sparkline_smooth(results, args):
    height = int(args.get('height', '20'))
    (dmin, dmax) = [int(x) for x in args.get('limits', '0,100').split(',')]
    im = PNGCanvas((len(results)-1)*step+4, height)
-   im.color = rgb.colors['white']
+   im.color = rgb.colors('white')
    im.filledRectangle(0, 0, im.width-1, im.height-1)
    coords = zip(range(1,len(results)*step+1, step), [height - 3  - (y-dmin)/(float(dmax - dmin +1)/(height-4)) for y in results])
-   im.color = rgb.colors['dark gray']
+   im.color = rgb.colors('dark gray')
    lastx, lasty = coords[0]
    for x0, y0, in coords:
      im.line(lastx, lasty, x0, y0)
      lastx, lasty = x0, y0
-   min_color = rgb.colors[args.get('min-color', 'green')]
-   max_color = rgb.colors[args.get('max-color', 'red')]
-   last_color = rgb.colors[args.get('last-color', 'blue')]
+   min_color = rgb.colors(args.get('min-color', 'green'))
+   max_color = rgb.colors(args.get('max-color', 'red'))
+   last_color = rgb.colors(args.get('last-color', 'blue'))
    has_min = args.get('min-m', 'false')
    has_max = args.get('max-m', 'false')
    has_last = args.get('last-m', 'false')
    if has_min == 'true':
       min_pt = coords[results.index(min(results))]
       im.color = min_color
-      im.rectangle(min_pt[0]-1, min_pt[1]-1, min_pt[0]+1, min_pt[1]+1)
+      im.filledRectangle(min_pt[0]-1, min_pt[1]-1, min_pt[0]+1, min_pt[1]+1)
    if has_max == 'true':
       im.color = max_color
       max_pt = coords[results.index(max(results))]
-      im.rectangle(max_pt[0]-1, max_pt[1]-1, max_pt[0]+1, max_pt[1]+1)
+      im.filledRectangle(max_pt[0]-1, max_pt[1]-1, max_pt[0]+1, max_pt[1]+1)
    if has_last == 'true':
       im.color = last_color
       end = coords[-1]
-      im.rectangle(end[0]-1, end[1]-1, end[0]+1, end[1]+1)
+      im.filledRectangle(end[0]-1, end[1]-1, end[0]+1, end[1]+1)
    return im.dump()
 
 def plot_error(results, args):
    im = PNGCanvas(40, 15)
-   im.color = rgb.colors['red']
+   im.color = rgb.colors('red')
    im.line(0, 0, im.width-1, im.height-1)
    im.line(0, im.height-1, im.width-1, 0)
    return im.dump()
