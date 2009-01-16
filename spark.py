@@ -1,10 +1,7 @@
-#!/usr/bin/python -u
-
 """spark.cgi
 
 A web service for generating sparklines.
 
-Requires the Python Imaging Library 
 """
 
 __author__ = "Joe Gregorio (joe@bitworking.org)"
@@ -45,19 +42,21 @@ def plot_sparkline_discrete(results, args, longlines=False):
     if longlines:
         gap = 0
     im = PNGCanvas(len(results)*width-1, height)
+    im.color = rgb.colors['white']
+    im.filledRectangle(0, 0, im.width-1, im.height-1)
 
     (dmin, dmax) = [int(x) for x in args.get('limits', '0,100').split(',')]
     if dmax < dmin:
         dmax = dmin
-    zero = im.size[1] - 1
+    zero = im.height - 1
     if dmin < 0 and dmax > 0:
-        zero = im.size[1] - (0 - dmin) / (float(dmax - dmin + 1) / (height - gap))
+        zero = im.height - (0 - dmin) / (float(dmax - dmin + 1) / (height - gap))
     for (r, i) in zip(results, range(0, len(results)*width, width)):
         color = (r >= upper) and above_color or below_color
         if r < 0:
-            y_coord = im.size[1] - (r - dmin) / (float(dmax - dmin + 1) / (height - gap))
+            y_coord = im.height - (r - dmin) / (float(dmax - dmin + 1) / (height - gap))
         else:
-            y_coord = im.size[1] - (r - dmin) / (float(dmax - dmin + 1) / (height - gap))
+            y_coord = im.height - (r - dmin) / (float(dmax - dmin + 1) / (height - gap))
         im.color = rgb.colors[color]
         if longlines:
             im.rectangle(i, zero, i+width-2, y_coord)
@@ -70,8 +69,10 @@ def plot_sparkline_smooth(results, args):
    height = int(args.get('height', '20'))
    (dmin, dmax) = [int(x) for x in args.get('limits', '0,100').split(',')]
    im = PNGCanvas((len(results)-1)*step+4, height)
+   im.color = rgb.colors['white']
+   im.filledRectangle(0, 0, im.width-1, im.height-1)
    coords = zip(range(1,len(results)*step+1, step), [height - 3  - (y-dmin)/(float(dmax - dmin +1)/(height-4)) for y in results])
-   im.color = [128, 128, 128]
+   im.color = rgb.colors['gray']
    lastx, lasty = coords[0]
    for x0, y0, in coords:
      im.line(lastx, lasty, x0, y0)
@@ -99,8 +100,8 @@ def plot_sparkline_smooth(results, args):
 def plot_error(results, args):
    im = PNGCanvas(40, 15)
    im.color = rgb.colors['red']
-   im.line(0, 0, im.width, im.height)
-   im.line(0, im.height, im.width, 0)
+   im.line(0, 0, im.width-1, im.height-1)
+   im.line(0, im.height-1, im.width-1, 0)
    return im.dump()
 
 def not_modified():
@@ -133,6 +134,9 @@ plot_types = {'discrete': plot_sparkline_discrete,
                  'error': plot_error
     }
 
+import logging
+logging.info(os.environ)
+
 if not os.environ['REQUEST_METHOD'] in ['GET', 'HEAD']:
     error("Status: 405 Method Not Allowed")
 if_none_match = os.environ.get('HTTP_IF_NONE_MATCH', '')
@@ -142,21 +146,21 @@ form = cgi.FieldStorage()
 raw_data = cgi_param(form, 'd', '')
 if not raw_data:
     error("Status: 400 No data supplied")
-try:
-    (data_min, data_max) = [int(x) for x in cgi_param(form, 'limits', '0,100').split(',')]
+#try:
+(data_min, data_max) = [int(x) for x in cgi_param(form, 'limits', '0,100').split(',')]
 
-    data = [int(d) for d in raw_data.split(",") if d]
-    if min(data) < data_min or max(data) > data_max:
-        error("Status: 400 Data out of range")
+data = [int(d) for d in raw_data.split(",") if d]
+if min(data) < data_min or max(data) > data_max:
+    error("Status: 400 Data out of range")
 
-    args = dict([(key, form[key].value) for key in form.keys()])
-    type = cgi_param(form, 'type', 'discrete')
-    if not plot_types.has_key(type):
-        error("Status: 400 Unknown plot type.")
+args = dict([(key, form[key].value) for key in form.keys()])
+type = cgi_param(form, 'type', 'discrete')
+if not plot_types.has_key(type):
+    error("Status: 400 Unknown plot type.")
 
-    image_data = plot_types[type](data, args)
-    ok()
-    sys.stdout.write(image_data)
-except:
-    error("Status: 500 Exception")
+image_data = plot_types[type](data, args)
+ok()
+sys.stdout.write(image_data)
+#except:
+#    error("Status: 500 Exception")
 

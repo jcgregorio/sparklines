@@ -67,7 +67,7 @@ function controlChanged() {
     for (var i=0; i<parameters.length; i++) {
         output_uri = output_uri + "&" + parameters[i] + "=" + document.getElementById(parameters[i])[parameters_accessor[parameters[i]]];
     }
-    document.getElementById('output_uri').value = 'http://bitworking.org/projects/sparklines/' + output_uri;
+    document.getElementById('output_uri').value = 'http://localhost:8080/' + output_uri;
     document.getElementById('output_img').src = output_uri;
 
     return true;
