@@ -1,3 +1,4 @@
+#!/usr/env python2.5
 from spark import plot
 
 
