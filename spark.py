@@ -13,15 +13,14 @@ __history__ = """
 
 """
 
-# TODO Make color selection robust
 import cgi
 import cgitb
-import sys
-import os
-import time
 
 cgitb.enable()
 
+import sys
+import os
+import time
 from pngcanvas import PNGCanvas 
 import rgb
 import StringIO
@@ -31,10 +30,10 @@ try:
 except:
     memcache = None
 
-last_modified = os.stat('spark.cgi').st_mtime
+last_modified = os.stat(__file__).st_mtime
 
-def hashed(str):
-    return hashlib.md5(str).hexdigest()
+def entity_hash():
+    return hashlib.md5(os.environ['QUERY_STRING'] + __version__).hexdigest()
 
 def plot_sparkline_discrete(results, args, longlines=False):
     """The source data is a list of values between
@@ -122,13 +121,12 @@ def ok():
     print "Status: 200 Ok"
     print "Content-type: image/png"
     print "Last-Modified: " + time.ctime(last_modified) + " GMT"
-    print 'ETag: "%s"' % str(hashed(os.environ['QUERY_STRING'] + __version__))
+    print 'ETag: "%s"' % entity_hash()
     print 'Cache-control: max-age 999999999'
     print ""
 
 def error(status="Status: 400 Bad Request"):
     print "Content-type: image/png"
-    print "X-Other: testing"
     print status 
     print ""
     sys.stdout.write(plot_error([], {}))
@@ -137,17 +135,18 @@ def error(status="Status: 400 Bad Request"):
 def cgi_param(form, name, default):
     return form.has_key(name) and form[name].value or default
 
-plot_types = {'discrete': plot_sparkline_discrete, 
-               'impulse': lambda data, args: plot_sparkline_discrete(data, args, True), 
-                'smooth': plot_sparkline_smooth,
-                 'error': plot_error
+def plot():
+    plot_types = {
+        'discrete': plot_sparkline_discrete, 
+        'impulse': lambda data, args: plot_sparkline_discrete(data, args, True), 
+        'smooth': plot_sparkline_smooth,
+        'error': plot_error
     }
 
-def plot():
     if not os.environ['REQUEST_METHOD'] in ['GET', 'HEAD']:
         error("Status: 405 Method Not Allowed")
     if_none_match = os.environ.get('HTTP_IF_NONE_MATCH', '')
-    hashkey = str(hashed(os.environ.get('QUERY_STRING', '') + __version__)) 
+    hashkey = entity_hash()
     if if_none_match and hashkey == if_none_match:
         not_modified()
     if memcache:

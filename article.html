@@ -114,10 +114,11 @@ handlers:
   script: main.py
         </pre>
 
+        <h3>Memcache</h3>
         <p>
         Now the original sparklines code was already made good use
         HTTP caching by setting ETag: and Cache-control: headers, but
-        we can do more under App Engine by using memcache.
+        we can do more under App Engine by using the memcache service.
         After drawing each sparkline we can store the PNG in 
         memcache using a hash of the incoming request query 
         parameters and the application version as the key 
@@ -128,6 +129,12 @@ handlers:
         system that doesn't have memcache support so
         we will make its use conditional.
         </p>
+
+        <pre class='prettyprint'>try:
+    from google.appengine.api import memcache
+except:
+    memcache = None
+</pre>
 
 
     </body>
