@@ -1,4 +1,4 @@
-#!/usr/env python2.5
+#!/bin/env python2.5
 from spark import plot
 
 
