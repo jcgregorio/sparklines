@@ -84,7 +84,7 @@ def plot_sparkline_smooth(results, args):
    im.color = rgb.colors('white')
    im.filledRectangle(0, 0, im.width-1, im.height-1)
    coords = zip(range(1,len(results)*step+1, step), [height - 3  - (y-dmin)/(float(dmax - dmin +1)/(height-4)) for y in results])
-   im.color = rgb.colors('dark gray')
+   im.color = rgb.colors('gray53')
    lastx, lasty = coords[0]
    for x0, y0, in coords:
      im.line(lastx, lasty, x0, y0)
