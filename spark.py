@@ -23,7 +23,6 @@ import os
 import time
 from pngcanvas import PNGCanvas 
 import rgb
-import StringIO
 
 try:
     from hashlib import md5
