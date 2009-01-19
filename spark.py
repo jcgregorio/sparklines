@@ -24,7 +24,12 @@ import time
 from pngcanvas import PNGCanvas 
 import rgb
 import StringIO
-import hashlib
+
+try:
+    from hashlib import md5
+except:
+    from md5 import md5
+
 try:
     from google.appengine.api import memcache
 except:
@@ -33,7 +38,7 @@ except:
 last_modified = os.stat(__file__).st_mtime
 
 def entity_hash():
-    return hashlib.md5(os.environ['QUERY_STRING'] + __version__).hexdigest()
+    return md5(os.environ['QUERY_STRING'] + __version__).hexdigest()
 
 def plot_sparkline_discrete(results, args, longlines=False):
     """The source data is a list of values between
