@@ -180,4 +180,5 @@ def plot():
     except:
         error("Status: 500 Exception")
 
-
+if __name__ == '__main__':
+    plot()

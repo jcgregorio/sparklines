@@ -1,14 +1,37 @@
 <html>
 <head>
 
-     <!--#include virtual="header.html" -->
+    <link rel="shortcut icon" type="image/ico" href="http://bitworking.org/favicon.ico" />
+    <link rel="stylesheet" type="text/css" href="http://bitworking.org/css/b/base.css" title="blocky"/> 
     <script type="text/javascript" src="spark.js"></script>
 
     <title>Joe Gregorio | BitWorking | Projects | Sparklines </title>
 </head>
 <body class='main' id="top" name="top" >
     <div class="body">
-        <!--#include virtual="titlebar.html" -->
+        <div class="title">
+            <h1><a href="http://bitworking.org/news/">BitWorking</a></h1>
+            <p>
+            <a href="http://bitworking.org/news/bio/">Joe Gregorio</a>'s
+            <a href="http://bitworking.org/news/">writings</a> 
+            <a href="http://bitworking.org/news/archives/">(archives)</a>,  
+            <a href="http://bitworking.org/projects/">projects</a> and
+            <a href="http://bitworking.org/projects/me/">status updates</a>.
+            </p>
+
+            <form action="http://www.google.com/search" method="get" style="display:inline">
+                <input name="q" 
+                id="q"
+                type="text" 
+                title="Search bitworking.org using Google"
+                value="Search"/> <input name="q" 
+                type="hidden" 
+                value="site:bitworking.org"/>
+            </form>
+
+        </div>
+
+
         <div class='content'>
             <p>Welcome to the sparkline generator. You can start right away by dynamically
             creating a sparkline using the <a href="#generator">Sparkline Generator Web Application</a>, or you can read more
@@ -201,7 +224,7 @@
             <!--  ------------ Source Code ------------    -->
             <h3 id="source" name="about">Source Code</h3>
             <p>The full source code for this web service is freely available. 
-            It is a single Python CGI <a href="spark.py">spark.cgi</a>
+            It is a single Python CGI <a href="http://biworking.org/projects/sparklines/spark.py">spark.py</a>
             <dl>
                 <dt>Requirements</dt>
                 <dd><a href="http://www.pythonware.com/products/pil/">Python Imaging Library</a><dd>
@@ -271,8 +294,11 @@
             <p><a href="#top">[top]</a></p>
 
         </div>
-     <!--#include virtual="footer.html" -->
-
+        <div class="footer">
+            <p class="footercopyright">
+            &#xa9; 2002-8 <a href="http://bitworking.org/news/bio">Joe Gregorio</a> [<a href="http://bitworking.org/sitemap/">Sitemap</a>]
+            </p>
+        </div>
     </div>
 </body>
 
